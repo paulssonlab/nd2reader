@@ -240,7 +240,7 @@ class Parser(object):
         """
         return {channel: n for n, channel in enumerate(self.metadata["channels"])}
 
-    def _get_raw_image_data(self, image_group_number, channel_offset, height, width):
+    def _get_raw_image_data(self, image_group_number, channel_offset, height, width, memmap=False):
         """Reads the raw bytes and the timestamp of an image.
 
         Args:
@@ -253,13 +253,16 @@ class Parser(object):
 
         """
         chunk = self._label_map.get_image_data_location(image_group_number)
-        data = read_chunk(self._fh, chunk)
+        data = read_chunk(self._fh, chunk, memmap=memmap)
 
         # All images in the same image group share the same timestamp! So if you have complicated image data,
         # your timestamps may not be entirely accurate. Practically speaking though, they'll only be off by a few
         # seconds unless you're doing something super weird.
         timestamp = struct.unpack("d", data[:8])[0]
-        image_group_data = array.array("H", data[8:])
+        if memmap:
+            image_group_data = data[8:].view(np.uint16)
+        else:
+            image_group_data = array.array("H", data[8:])
 
         # The images for the various channels are interleaved within the same array. For example, the second image
         # of a four image group will be composed of bytes 2, 6, 10, etc. If you understand why someone would design

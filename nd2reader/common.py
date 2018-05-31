@@ -1,11 +1,11 @@
 import os
 import struct
 import array
+import numpy as np
 from datetime import datetime
 import six
 import re
 from nd2reader.exceptions import InvalidVersionError
-
 
 def get_version(fh):
     """Determines what version the ND2 is.
@@ -44,7 +44,7 @@ def parse_version(data):
     raise InvalidVersionError("The version of the ND2 you specified is not supported.")
 
 
-def read_chunk(fh, chunk_location):
+def read_chunk(fh, chunk_location, memmap=False):
     """Reads a piece of data given the location of its pointer.
 
     Args:
@@ -65,8 +65,12 @@ def read_chunk(fh, chunk_location):
         raise ValueError("The ND2 file seems to be corrupted.")
     # We start at the location of the chunk metadata, skip over the metadata, and then proceed to the
     # start of the actual data field, which is at some arbitrary place after the metadata.
-    fh.seek(chunk_location + 16 + relative_offset)
-    return fh.read(data_length)
+    offset = chunk_location + 16 + relative_offset
+    if memmap:
+        return np.frombuffer(fh, np.uint8, count=data_length, offset=offset)
+    else:
+        fh.seek(offset)
+        return fh.read(data_length)
 
 
 def read_array(fh, kind, chunk_location):

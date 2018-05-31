@@ -3,7 +3,7 @@ from pims.base_frames import FramesSequenceND
 from nd2reader.exceptions import EmptyFileError
 from nd2reader.parser import Parser
 import numpy as np
-
+import mmap
 
 class ND2Reader(FramesSequenceND):
     """PIMS wrapper for the ND2 parser.
@@ -12,12 +12,16 @@ class ND2Reader(FramesSequenceND):
 
     class_priority = 12
 
-    def __init__(self, filename):
+    def __init__(self, filename, memmap=False):
         super(self.__class__, self).__init__()
         self.filename = filename
 
         # first use the parser to parse the file
-        self._fh = open(filename, "rb")
+        self._raw_fh = open(filename, "rb")
+        if memmap:
+            self._fh = mmap.mmap(self._raw_fh.fileno(), 0, access=mmap.ACCESS_READ)
+        else:
+            self._fh = self._raw_fh
         self._parser = Parser(self._fh)
 
         # Setup metadata
