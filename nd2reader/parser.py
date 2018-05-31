@@ -259,14 +259,13 @@ class Parser(object):
         # your timestamps may not be entirely accurate. Practically speaking though, they'll only be off by a few
         # seconds unless you're doing something super weird.
         timestamp = struct.unpack("d", data[:8])[0]
-        image_group_data = array.array("H", data)
-        image_data_start = 4 + channel_offset
+        image_group_data = array.array("H", data[8:])
 
         # The images for the various channels are interleaved within the same array. For example, the second image
         # of a four image group will be composed of bytes 2, 6, 10, etc. If you understand why someone would design
         # a data structure that way, please send the author of this library a message.
-        number_of_true_channels = int((len(image_group_data) - 4) / (height * width))
-        image_data = np.reshape(image_group_data[image_data_start::number_of_true_channels], (height, width))
+        number_of_true_channels = int(len(image_group_data) / (height * width))
+        image_data = np.reshape(image_group_data[channel_offset::number_of_true_channels], (height, width))
 
         # Skip images that are all zeros! This is important, since NIS Elements creates blank "gap" images if you
         # don't have the same number of images each cycle. We discovered this because we only took GFP images every
