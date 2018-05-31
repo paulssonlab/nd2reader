@@ -49,7 +49,7 @@ class Parser(object):
         z_level = self._calculate_z_level(index)
         return field_of_view, channel, z_level
 
-    def get_image(self, index):
+    def get_image(self, index, memmap=False):
         """
         Creates an Image object and adds its metadata, based on the index (which is simply the order in which the image
         was acquired). May return None if the ND2 contains multiple channels and not all were taken in each cycle (for
@@ -71,13 +71,13 @@ class Parser(object):
         frame_number = self._calculate_frame_number(image_group_number, field_of_view, z_level)
         try:
             timestamp, image = self._get_raw_image_data(image_group_number, channel_offset, self.metadata["height"],
-                                                        self.metadata["width"])
+                                                        self.metadata["width"], memmap=memmap)
         except (TypeError, NoImageError):
             return Frame([], frame_no=frame_number, metadata=self._get_frame_metadata())
         else:
             return image
 
-    def get_image_by_attributes(self, frame_number, field_of_view, channel_name, z_level, height, width):
+    def get_image_by_attributes(self, frame_number, field_of_view, channel_name, z_level, height, width, memmap=False):
         """Gets an image based on its attributes alone
 
         Args:
@@ -95,7 +95,7 @@ class Parser(object):
         image_group_number = self._calculate_image_group_number(frame_number, field_of_view, z_level)
         try:
             timestamp, raw_image_data = self._get_raw_image_data(image_group_number, self._channel_offset[channel_name],
-                                                                 height, width)
+                                                                 height, width, memmap=memmap)
         except (TypeError, NoImageError):
             return Frame([], frame_no=frame_number, metadata=self._get_frame_metadata())
         else:

@@ -56,7 +56,7 @@ class ND2Reader(FramesSequenceND):
         except KeyError:
             return 0
 
-    def get_frame_2D(self, c=0, t=0, z=0, x=0, y=0, v=0):
+    def get_frame_2D(self, c=0, t=0, z=0, x=0, y=0, v=0, memmap=False):
         """Gets a given frame using the parser
 
         Args:
@@ -78,7 +78,7 @@ class ND2Reader(FramesSequenceND):
 
         x = self.metadata["width"] if x <= 0 else x
         y = self.metadata["height"] if y <= 0 else y
-        return self._parser.get_image_by_attributes(t, v, c_name, z, y, x)
+        return self._parser.get_image_by_attributes(t, v, c_name, z, y, x, memmap=memmap)
 
     @property
     def parser(self):
