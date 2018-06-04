@@ -4,6 +4,40 @@ from nd2reader.exceptions import EmptyFileError
 from nd2reader.parser import Parser
 import numpy as np
 import mmap
+import wrapt
+
+class MemmappableFile(wrapt.ObjectProxy):
+    def __init__(self, filename, memmap=False):
+        self.__wrapped__ = None
+        self._self_filename = filename
+        self._self_memmap = memmap
+        self._self_open()
+
+    def _self_open(self):
+        self._self_file = open(self._self_filename, 'rb')
+        if self._self_memmap:
+            wrapped = mmap.mmap(self._self_file.fileno(), 0, access=mmap.ACCESS_READ)
+        else:
+            wrapped = self._self_file
+        super().__init__(wrapped)
+
+    @property
+    def name(self):
+        return self._self_filename
+
+    @property
+    def is_memmap(self):
+        return self._self_memmap
+
+    def __reduce__(self):
+        return (MemmappableFile, (self._self_filename, self._self_memmap))
+
+    # def __getstate__(self):
+    #     return {k: getattr(self, k) for k in ('_self_filename', '_self_memmap')}
+
+    # def __setstate__(self, state):
+    #     self.__dict__.update(state)
+    #     self._self_open()
 
 class ND2Reader(FramesSequenceND):
     """PIMS wrapper for the ND2 parser.
@@ -17,15 +51,8 @@ class ND2Reader(FramesSequenceND):
         self.filename = filename
 
         # first use the parser to parse the file
-        self._raw_fh = open(filename, "rb")
-        if memmap:
-            self._fh = mmap.mmap(self._raw_fh.fileno(), 0, access=mmap.ACCESS_READ)
-        else:
-            self._fh = self._raw_fh
+        self._fh = MemmappableFile(self.filename, memmap=memmap)
         self._parser = Parser(self._fh)
-
-        # Setup metadata
-        self.metadata = self._parser.metadata
 
         # Set data type
         self._dtype = self._parser.get_dtype_from_metadata()
@@ -88,6 +115,10 @@ class ND2Reader(FramesSequenceND):
             Parser: the parser object
         """
         return self._parser
+
+    @property
+    def metadata(self):
+        return self._parser.metadata
 
     @property
     def pixel_type(self):

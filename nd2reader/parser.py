@@ -26,7 +26,6 @@ class Parser(object):
         self._fh = fh
         self._label_map = None
         self._raw_metadata = None
-        self.metadata = None
 
         # First check the file version
         self.supported = self._check_version_supported()
@@ -134,7 +133,10 @@ class Parser(object):
         # Retrieve raw metadata from the label mapping
         self._label_map = self._build_label_map()
         self._raw_metadata = RawMetadata(self._fh, self._label_map)
-        self.metadata = self._raw_metadata.__dict__
+
+    @property
+    def metadata(self):
+        return self._raw_metadata.__dict__
 
     def _build_label_map(self):
         """
