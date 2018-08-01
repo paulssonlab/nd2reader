@@ -5,6 +5,7 @@ import array
 import six
 from pims.base_frames import Frame
 import numpy as np
+from wrapt import synchronized
 
 from nd2reader.common import get_version, read_chunk
 from nd2reader.exceptions import InvalidVersionError, NoImageError
@@ -110,6 +111,7 @@ class Parser(object):
         """
         return np.float64
 
+    @synchronized
     def _check_version_supported(self):
         """Checks if the ND2 file version is supported by this reader.
 
@@ -126,6 +128,7 @@ class Parser(object):
 
         return supported
 
+    @synchronized
     def _parse_metadata(self):
         """Reads all metadata and instantiates the Metadata object.
 
@@ -138,6 +141,7 @@ class Parser(object):
     def metadata(self):
         return self._raw_metadata.__dict__
 
+    @synchronized
     def _build_label_map(self):
         """
         Every label ends with an exclamation point, however, we can't directly search for those to find all the labels
@@ -242,6 +246,7 @@ class Parser(object):
         """
         return {channel: n for n, channel in enumerate(self.metadata["channels"])}
 
+    @synchronized
     def _get_raw_image_data(self, image_group_number, channel_offset, height, width, memmap=False):
         """Reads the raw bytes and the timestamp of an image.
 
