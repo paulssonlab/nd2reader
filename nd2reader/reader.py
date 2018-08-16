@@ -5,6 +5,7 @@ from nd2reader.parser import Parser
 import numpy as np
 import mmap
 import wrapt
+from copy import copy
 
 class MemmappableFile(wrapt.ObjectProxy):
     def __init__(self, filename, memmap=False):
@@ -62,6 +63,19 @@ class ND2Reader(FramesSequenceND):
 
         # Other properties
         self._timesteps = None
+
+    def reopen(self):
+        # TODO: this is incredibly clunky
+        fh = MemmappableFile(self.filename, memmap=self._fh.is_memmap)
+        reader = copy(self)
+        reader._fh = fh
+        parser = copy(self._parser)
+        parser._fh = fh
+        raw_metadata = copy(parser._raw_metadata)
+        raw_metadata._fh = fh
+        parser._raw_metadata = raw_metadata
+        reader._parser = parser
+        return reader
 
     @classmethod
     def class_exts(cls):

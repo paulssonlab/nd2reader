@@ -139,7 +139,7 @@ class Parser(object):
 
     @property
     def metadata(self):
-        return self._raw_metadata.__dict__
+        return self._raw_metadata.get_parsed_metadata()
 
     @synchronized
     def _build_label_map(self):

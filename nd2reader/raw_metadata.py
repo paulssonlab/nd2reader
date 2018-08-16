@@ -14,14 +14,14 @@ class RawMetadata(object):
         self._label_map = label_map
         self._metadata_parsed = None
 
-    @property
-    def __dict__(self):
-        """Returns the parsed metadata in dictionary form.
-
-        Returns:
-            dict: the parsed metadata
-        """
-        return self.get_parsed_metadata()
+    #@property
+    #def __dict__(self):
+    #    """Returns the parsed metadata in dictionary form.
+    #
+    #    Returns:
+    #        dict: the parsed metadata
+    #    """
+    #    return self.get_parsed_metadata()
 
     def get_parsed_metadata(self):
         """Returns the parsed metadata in dictionary form.
