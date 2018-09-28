@@ -67,7 +67,11 @@ def read_chunk(fh, chunk_location, memmap=False):
     # start of the actual data field, which is at some arbitrary place after the metadata.
     offset = chunk_location + 16 + relative_offset
     if memmap:
-        return np.frombuffer(fh, np.uint8, count=data_length, offset=offset)
+        # TODO: np.frombuffer does not like taking wrapt.ObjectProxy of mmap.mmap
+        # TODO: additionally, calling memoryview() on wrapt.ObjectProxy returns without raising an exception (???)
+        if hasattr(fh, '__wrapped__'):
+            fh = fh.__wrapped__
+        return np.frombuffer(memoryview(fh), np.uint8, count=data_length, offset=offset)
     else:
         fh.seek(offset)
         return fh.read(data_length)
