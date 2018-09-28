@@ -71,13 +71,14 @@ class Parser(object):
         frame_number = self._calculate_frame_number(image_group_number, field_of_view, z_level)
         try:
             timestamp, image = self._get_raw_image_data(image_group_number, channel_offset, self.metadata["height"],
-                                                        self.metadata["width"], memmap=memmap)
+                                                        self.metadata["width"], memmap=memmap, pims=pims)
         except (TypeError, NoImageError):
+            # TODO: need to handle pims=False
             return Frame([], frame_no=frame_number, metadata=self._get_frame_metadata())
         else:
             return image
 
-    def get_image_by_attributes(self, frame_number, field_of_view, channel_name, z_level, height, width, memmap=False):
+    def get_image_by_attributes(self, frame_number, field_of_view, channel_name, z_level, height, width, memmap=False, pims=False):
         """Gets an image based on its attributes alone
 
         Args:
@@ -95,9 +96,13 @@ class Parser(object):
         image_group_number = self._calculate_image_group_number(frame_number, field_of_view, z_level)
         try:
             timestamp, raw_image_data = self._get_raw_image_data(image_group_number, self._channel_offset[channel_name],
-                                                                 height, width, memmap=memmap)
+                                                                 height, width, memmap=memmap, pims=pims)
         except (TypeError, NoImageError):
-            return Frame([], frame_no=frame_number, metadata=self._get_frame_metadata())
+            # TODO: handle pims=False
+            if pims:
+                return Frame([], frame_no=frame_number, metadata=self._get_frame_metadata())
+            else:
+                return None
         else:
             return raw_image_data
 
@@ -247,7 +252,7 @@ class Parser(object):
         return {channel: n for n, channel in enumerate(self.metadata["channels"])}
 
     @synchronized
-    def _get_raw_image_data(self, image_group_number, channel_offset, height, width, memmap=False):
+    def _get_raw_image_data(self, image_group_number, channel_offset, height, width, memmap=False, pims=False):
         """Reads the raw bytes and the timestamp of an image.
 
         Args:
@@ -282,7 +287,10 @@ class Parser(object):
         # other cycle to reduce phototoxicity, but NIS Elements still allocated memory as if we were going to take
         # them every cycle.
         if np.any(image_data):
-            return timestamp, Frame(image_data, metadata=self._get_frame_metadata())
+            if pims:
+                return timestamp, Frame(image_data, metadata=self._get_frame_metadata())
+            else:
+                return timestamp, image_data
 
         raise NoImageError
 
