@@ -163,7 +163,15 @@ class ND2Reader(FramesSequenceND):
         Returns:
             float: the (average) frame rate in frames per second
         """
-        return 1000. / np.mean(np.diff(self.timesteps))
+        total_duration = 0.0
+
+        for loop in self.metadata['experiment']['loops']:
+            total_duration += loop['duration']
+
+        if total_duration == 0:
+            raise ValueError('Total measurement duration could not be determined from loops')
+
+        return self.metadata['num_frames'] / (total_duration/1000.0)
 
     def _get_metadata_property(self, key, default=None):
         if self.metadata is None:
@@ -226,26 +234,9 @@ class ND2Reader(FramesSequenceND):
             np.ndarray: an array of times in milliseconds.
 
         """
-        if self._timesteps is not None and len(timesteps) > 0:
+        if self._timesteps is not None and len(self._timesteps) > 0:
             return self._timesteps
 
-        timesteps = np.array([])
-        current_time = 0.0
-
-        for loop in self.metadata['experiment']['loops']:
-            if loop['stimulation']:
-                continue
-
-            if loop['sampling_interval'] == 0:
-                # This is a loop were no data is acquired
-                current_time += loop['duration']
-                continue
-
-            timesteps = np.concatenate(
-                (timesteps, np.arange(current_time, current_time + loop['duration'], loop['sampling_interval'])))
-            current_time += loop['duration']
-
-        # if experiment did not finish, number of timesteps is wrong. Take correct amount of leading timesteps.
-        self._timesteps = timesteps[:self.metadata['num_frames']]
+        self._timesteps = np.array(list(self._parser._raw_metadata.acquisition_times), dtype=np.float) * 1000.0
 
         return self._timesteps
