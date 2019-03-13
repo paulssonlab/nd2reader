@@ -113,23 +113,23 @@ class RawMetadata(object):
         if self.image_metadata_sequence is None:
             return []
 
-        try:
-            metadata = self.image_metadata_sequence[six.b('SLxPictureMetadata')][six.b('sPicturePlanes')]
-        except KeyError:
-            return []
+        # try:
+        #     metadata = self.image_metadata_sequence[six.b('SLxPictureMetadata')][six.b('sPicturePlanes')]
+        # except KeyError:
+        #     return []
 
-        channels = self._process_channels_metadata(metadata)
+        channels = self._process_channels_metadata()
 
         return channels
 
-    def _process_channels_metadata(self, metadata):
-        validity = self._get_channel_validity_list(metadata)
-
+    def _process_channels_metadata(self):
+        validity = self._get_channel_validity_list()
+        channel_data = self.image_metadata_sequence[six.b('SLxPictureMetadata')][six.b('sPicturePlanes')][six.b('sPlaneNew')]
         # Channel information is contained in dictionaries with the keys a0, a1...an where the number
         # indicates the order in which the channel is stored. So by sorting the dicts alphabetically
         # we get the correct order.
         channels = []
-        for valid, (label, chan) in zip(validity, sorted(metadata[six.b('sPlaneNew')].items())):
+        for valid, (label, chan) in zip(validity, sorted(channel_data.items())):
             if not valid:
                 continue
             if chan[six.b('sDescription')] is not None:
@@ -138,13 +138,14 @@ class RawMetadata(object):
                 channels.append('Unknown')
         return channels
 
-    def _get_channel_validity_list(self, metadata):
-        try:
-            validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][0][
-                six.b('ppNextLevelEx')][six.b('')][0][six.b('pItemValid')]
-        except (KeyError, TypeError):
-            # If none of the channels have been deleted, there is no validity list, so we just make one
-            validity = [True for _ in metadata]
+    def _get_channel_validity_list(self):
+        validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][six.b('pItemValid')]
+        # try:
+        #     validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][0][
+        #         six.b('ppNextLevelEx')][six.b('')][0][six.b('pItemValid')]
+        # except (KeyError, TypeError):
+        #     # If none of the channels have been deleted, there is no validity list, so we just make one
+        #     validity = [True for _ in metadata]
         return validity
 
     def _parse_fields_of_view(self):
