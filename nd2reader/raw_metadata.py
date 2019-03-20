@@ -2,9 +2,17 @@ import re
 import xmltodict
 import six
 import numpy as np
+from itertools import repeat
 
-from nd2reader.common import read_chunk, read_array, read_metadata, parse_date, get_from_dict_if_exists
-from nd2reader.common_raw_metadata import parse_dimension_text_line, parse_if_not_none, parse_roi_shape, parse_roi_type, get_loops_from_data, determine_sampling_interval
+from nd2reader.common import (read_chunk, read_array,
+                              read_metadata, parse_date,
+                              get_from_dict_if_exists)
+from nd2reader.common_raw_metadata import (parse_dimension_text_line,
+                                           parse_if_not_none,
+                                           parse_roi_shape,
+                                           parse_roi_type,
+                                           get_loops_from_data,
+                                           determine_sampling_interval)
 
 
 class RawMetadata(object):
@@ -135,7 +143,11 @@ class RawMetadata(object):
         return channels
 
     def _get_channel_validity_list(self):
-        validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][six.b('pItemValid')]
+        try:
+            validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][six.b('pItemValid')]
+        except:
+            # TODO: sometimes there is no validity list, not sure why
+            validity = repeat(True)
         # try:
         #     validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][0][
         #         six.b('ppNextLevelEx')][six.b('')][0][six.b('pItemValid')]
@@ -185,6 +197,7 @@ class RawMetadata(object):
 
     def _parse_dimension(self, pattern):
         dimension_text = self._parse_dimension_text()
+        print('>>',dimension_text)
         if dimension_text is None:
             return []
         if six.PY3:
@@ -519,31 +532,31 @@ class RawMetadata(object):
         """
         return xmltodict.parse(read_chunk(self._fh, self._label_map.app_info))
 
-    @property
-    def camera_temp(self):
-        """Camera temperature
+    # @property
+    # def camera_temp(self):
+    #     """Camera temperature
 
-        Yields:
-            float: the temperature
+    #     Yields:
+    #         float: the temperature
 
-        """
-        camera_temp = read_array(self._fh, 'double', self._label_map.camera_temp)
-        if camera_temp:
-            for temp in map(lambda x: round(x * 100.0, 2), camera_temp):
-                yield temp
+    #     """
+    #     camera_temp = read_array(self._fh, 'double', self._label_map.camera_temp)
+    #     if camera_temp:
+    #         for temp in map(lambda x: round(x * 100.0, 2), camera_temp):
+    #             yield temp
 
-    @property
-    def acquisition_times(self):
-        """Acquisition times
+    # @property
+    # def acquisition_times(self):
+    #     """Acquisition times
 
-        Yields:
-            float: the acquisition time
+    #     Yields:
+    #         float: the acquisition time
 
-        """
-        acquisition_times = read_array(self._fh, 'double', self._label_map.acquisition_times)
-        if acquisition_times:
-            for acquisition_time in map(lambda x: x / 1000.0, acquisition_times):
-                yield acquisition_time
+    #     """
+    #     acquisition_times = read_array(self._fh, 'double', self._label_map.acquisition_times)
+    #     if acquisition_times:
+    #         for acquisition_time in map(lambda x: x / 1000.0, acquisition_times):
+    #             yield acquisition_time
 
     @property
     def image_metadata(self):

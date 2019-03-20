@@ -65,6 +65,7 @@ class Parser(object):
             Frame: the image
 
         """
+        print('!!!')
         field_of_view, channel, z_level = self.calculate_image_properties(index)
         channel_offset = index % len(self.metadata["channels"])
         image_group_number = int(index / len(self.metadata["channels"]))
@@ -281,7 +282,6 @@ class Parser(object):
         # a data structure that way, please send the author of this library a message.
         number_of_true_channels = int(len(image_group_data) / (height * width))
         image_data = np.reshape(image_group_data[channel_offset::number_of_true_channels], (height, width))
-
         # Skip images that are all zeros! This is important, since NIS Elements creates blank "gap" images if you
         # don't have the same number of images each cycle. We discovered this because we only took GFP images every
         # other cycle to reduce phototoxicity, but NIS Elements still allocated memory as if we were going to take
@@ -294,11 +294,11 @@ class Parser(object):
 
         raise NoImageError
 
-    def _get_frame_metadata(self):
-        """Get the metadata for one frame
+    # def _get_frame_metadata(self):
+    #     """Get the metadata for one frame
 
-        Returns:
-            dict: a dictionary containing the parsed metadata
+    #     Returns:
+    #         dict: a dictionary containing the parsed metadata
 
-        """
-        return self.metadata
+    #     """
+    #     return self.metadata

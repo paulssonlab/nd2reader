@@ -330,27 +330,6 @@ def _add_to_metadata(metadata, name, value):
 
     return metadata
 
-
-def get_from_dict_if_exists(key, dictionary, convert_key_to_binary=True):
-    """
-    Get the entry from the dictionary if it exists
-    Args:
-        key: key to lookup
-        dictionary: dictionary to look in
-        convert_key_to_binary: convert the key from string to binary if true
-
-    Returns:
-        the value of dictionary[key] or None
-
-    """
-    if convert_key_to_binary:
-        key = six.b(key)
-
-    if key not in dictionary:
-        return None
-    return dictionary[key]
-
-
 def check_or_make_dir(directory):
     """
     Check if a directory exists, if not, create it
