@@ -65,6 +65,7 @@ class Parser(object):
             Frame: the image
 
         """
+        # TODO: handle fast time lapse
         field_of_view, channel, z_level = self.calculate_image_properties(index)
         channel_offset = index % len(self.metadata["channels"])
         image_group_number = int(index / len(self.metadata["channels"]))
@@ -217,12 +218,24 @@ class Parser(object):
             int: the image group number
 
         """
-        z_length = len(self.metadata['z_levels'])
-        z_length = z_length if z_length > 0 else 1
-        fields_of_view = len(self.metadata["fields_of_view"])
-        fields_of_view = fields_of_view if fields_of_view > 0 else 1
+        # z_length = len(self.metadata['z_levels'])
+        # z_length = z_length if z_length > 0 else 1
+        # fields_of_view = len(self.metadata['fields_of_view'])
+        # fields_of_view = fields_of_view if fields_of_view > 0 else 1
+        # image_group_number = frame_number * fields_of_view * z_length + (fov * z_length + z_level)
 
-        return frame_number * fields_of_view * z_length + (fov * z_length + z_level)
+        # TODO: hack to make work fast time lapse parse correctly; needs testing and clean up
+        dims = self._raw_metadata._get_dimensions()
+        dims.pop('λ', None) # channel is handled separately (because image data is interleaved)
+        dims.setdefault('Z', 1)
+        sizes = np.array(list(dims.values()))
+        frame_indices_map = {'T': frame_number, 'XY': fov, 'Z': z_level}
+        frame_indices = [frame_indices_map[dim] for dim in dims.keys()]
+        image_group_number = 0
+        for i in range(len(dims)):
+            cycle_length = np.product(sizes[i+1:])
+            image_group_number += frame_indices[i] * cycle_length
+        return image_group_number
 
     def _calculate_frame_number(self, image_group_number, field_of_view, z_level):
         """

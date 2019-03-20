@@ -2,6 +2,7 @@ import re
 import xmltodict
 import six
 import numpy as np
+from itertools import repeat
 
 from nd2reader.common import read_chunk, read_array, read_metadata, parse_date, get_from_dict_if_exists
 from nd2reader.common_raw_metadata import parse_dimension_text_line, parse_if_not_none, parse_roi_shape, parse_roi_type, get_loops_from_data, determine_sampling_interval
@@ -135,7 +136,11 @@ class RawMetadata(object):
         return channels
 
     def _get_channel_validity_list(self):
-        validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][six.b('pItemValid')]
+        try:
+            validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][six.b('pItemValid')]
+        except:
+            # TODO: sometimes there is no validity list, not sure why
+            validity = repeat(True)
         # try:
         #     validity = self.image_metadata[six.b('SLxExperiment')][six.b('ppNextLevelEx')][six.b('')][0][
         #         six.b('ppNextLevelEx')][six.b('')][0][six.b('pItemValid')]
@@ -182,6 +187,14 @@ class RawMetadata(object):
                 return entry
 
         return dimension_text
+
+    def _get_dimensions(self):
+        dimension_text = self._parse_dimension_text()
+        dimension_text = dimension_text.decode('utf')
+        dims = {}
+        for match in re.finditer(r"(\w+)\((\d+)\)(:? x |$)", re.sub(r"^Dimensions: ", '', dimension_text)):
+            dims[match.group(1)] = int(match.group(2))
+        return dims
 
     def _parse_dimension(self, pattern):
         dimension_text = self._parse_dimension_text()
